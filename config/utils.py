@@ -1,7 +1,7 @@
 import json
 import time
 from functools import wraps
-from datetime import datetime, date, timedelta
+from datetime import datetime, timedelta
 
 import requests
 from bs4 import BeautifulSoup
@@ -99,8 +99,8 @@ def check_week_and_day(week, week_day, day_name, res_text):
             week == "Непарна" and new_week_pair == "непарн."
         ):
             name_subject = row[int(week_day)]
+            name_id += 1
             if name_subject:
-                name_id += 1
                 name_subjects[replace_numbers(str(name_id))] = name_subject
 
     return name_subjects, change
@@ -127,7 +127,7 @@ def get_schedules(week, week_day, day_name, faculty_id, course_id, group_id):
         f"&faculty_id={faculty_id}&course_id={course_id}&team_id={group_id}"
     )
     data = f"_search=false&nd={time_now}&rows=20&page=1&sidx=&sord=asc"
-    r = s.post(url, data=data, headers=headers)
+    r = s.post(url=url, headers=headers, data=data)
     res_text = json.loads(r.text)
     schedule, change = check_week_and_day(week, week_day, day_name, res_text)
     schedule_cache[cache_key] = {"data": (schedule, change), "expiry": datetime.now() + CACHE_EXPIRY}

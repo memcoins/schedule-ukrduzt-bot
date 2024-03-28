@@ -1,6 +1,7 @@
 import asyncio
 import logging
 from os import getenv
+from datetime import date
 
 from aiogram import Bot, Dispatcher, F
 from aiogram.enums import ParseMode
