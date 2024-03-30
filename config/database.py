@@ -13,6 +13,7 @@ class Database:
                         "user_faculty"    TEXT,
                         "user_course"     INTEGER,
                         "user_group"      TEXT,
+                        "user_group_name" TEXT,
                         PRIMARY KEY("id" AUTOINCREMENT));""")
         self.conn.commit()
 
@@ -30,8 +31,8 @@ class Database:
         self.cur.execute("INSERT OR IGNORE INTO users (user_id, username) VALUES (?, ?)", (user_id, username))
         self.conn.commit()
 
-    def update_user(self, user_id, faculty, course, group):
-        self.cur.execute("UPDATE users SET user_faculty = ?, user_course = ?, user_group = ? WHERE user_id = ?",
-                         (faculty, course, group, user_id))
+    def update_user(self, user_id, faculty, course, group, group_name):
+        self.cur.execute("UPDATE users SET user_faculty = ?, user_course = ?, user_group = ?, user_group_name = ? "
+                         "WHERE user_id = ?", (faculty, course, group, group_name, user_id))
         self.conn.commit()
 

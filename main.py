@@ -121,41 +121,43 @@ async def get_group(call: CallbackQuery, state: FSMContext) -> None:
     course = user_data["course"].split("_")[1]
     groups = get_groups(faculty, course)
     for group_id, group_name in groups.items():
-        kb.add(InlineKeyboardButton(text=f'{group_name}', callback_data=f'{group_id}'))
+        group = f"{group_id}, {group_name}"
+        kb.add(InlineKeyboardButton(text=f'{group_name}', callback_data=group))
     kb.adjust(1)
     await call.message.edit_text(text="Виберіть групу ⬇️", reply_markup=kb.as_markup())
 
 
-@dp.callback_query(lambda call: call.data.isdigit() and len(call.data) == 5 or call.data in week_days_h)
+@dp.callback_query(lambda call: call.message.text == "Виберіть групу ⬇️" or call.data in week_days_h)
 async def get_schedule(call: CallbackQuery, state: FSMContext) -> None:
     week, current_day = get_current_week()
 
-    if call.data.isdigit() and len(call.data) == 5:
-        await state.update_data(group=call.data, step=4)
+    if call.message.text == "Виберіть групу ⬇️":
+        group = call.data.split(", ")[0]
+        group_name = call.data.split(", ")[1]
+        await state.update_data(group=group, step=4)
         user_data = await state.get_data()
         week_day = user_data["day"]
         week_day_sel = week_day.split("_")[0]
         faculty = user_data["faculty"].split("_")[1]
         course = int(user_data["course"].split("_")[1])
-        group = user_data["group"]
-        db.update_user(faculty=faculty, course=course, group=group, user_id=call.from_user.id)
+        db.update_user(faculty=faculty, course=course, group=group, group_name=group_name, user_id=call.from_user.id)
         schedule = get_schedules(week, week_day.split("_")[1], current_day, faculty, course, group)
     else:
         await state.update_data(day=call.data, step=1)
         user_data = db.get_user(call.from_user.id)
         week_day = (await state.get_data())["day"]
         week_day_sel = week_day.split("-")[0]
-        faculty, course, group = user_data[3:6]
+        faculty, course, group, group_name = user_data[3:7]
         schedule = get_schedules(week, week_day.split("-")[1], current_day, faculty, course, group)
 
     subjects, change_week = schedule
 
     if not subjects:
-        text = f"🔍 На *цей* день ваш розклад вільний\n\n⏰Вибраний день - *{week_day_sel}* \n📆Поточна неділя - *{week}*"
+        text = f"🔍 На *цей* день ваш розклад вільний\n\n⏰ Вибраний день - *{week_day_sel}*\n📆 Поточна неділя - *{week}*\n💼 Вибрана група - *{group_name}*"
     else:
         text_message = "\n".join(f"{subject_id}: *{subject_name}*" for subject_id, subject_name in subjects.items())
         week_str = "наступний" if change_week else "цей"
-        text = f"🔔Показано розклад на *{week_str}* тиждень\n\n{text_message}\n\n⏰Вибраний день - *{week_day_sel}* \n📆Поточна неділя - *{week}*"
+        text = f"🔔 Показано розклад на *{week_str}* тиждень\n\n{text_message}\n\n⏰ Вибраний день - *{week_day_sel}*\n📆 Поточна неділя - *{week}*\n💼 Вибрана група - *{group_name}*"
 
     await call.message.edit_text(text=text, parse_mode=ParseMode.MARKDOWN)
     await state.clear()
